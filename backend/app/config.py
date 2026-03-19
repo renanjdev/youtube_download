@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     STORAGE_BUCKET: str = "downloads"
     SUPABASE_URL: str
     SUPABASE_KEY: str
+    YOUTUBE_COOKIE_FILE: str | None = None
+    YOUTUBE_PO_TOKEN: str | None = None
+    YOUTUBE_PLAYER_CLIENTS: str | None = None
     JOBS_PER_HOUR: int = 5
     MAX_FILES_PER_JOB: int = 100
     FILE_EXPIRATION_SECONDS: int = 3600

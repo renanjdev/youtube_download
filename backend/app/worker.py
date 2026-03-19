@@ -36,14 +36,31 @@ def build_js_runtimes() -> dict:
     return runtimes
 
 
+def build_youtube_extractor_args() -> dict:
+    youtube_args = {
+        'skip': ['hls'],
+    }
+    if settings.YOUTUBE_PLAYER_CLIENTS:
+        youtube_args['player_client'] = [
+            client.strip()
+            for client in settings.YOUTUBE_PLAYER_CLIENTS.split(',')
+            if client.strip()
+        ]
+    if settings.YOUTUBE_PO_TOKEN:
+        youtube_args['po_token'] = [
+            token.strip()
+            for token in settings.YOUTUBE_PO_TOKEN.split(',')
+            if token.strip()
+        ]
+    return youtube_args
+
+
 def build_options(job_url: str, output_dir: str, mode: str) -> dict:
     base = {
         'outtmpl': os.path.join(output_dir, f'%(id)s.%(ext)s'),
         'format': 'bestaudio/best',
         'extractor_args': {
-            'youtube': {
-                'skip': ['hls'],
-            }
+            'youtube': build_youtube_extractor_args(),
         },
         'js_runtimes': build_js_runtimes(),
         'check_formats': 'selected',
@@ -51,6 +68,8 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
         'retries': 3,
         'fragment_retries': 3,
     }
+    if settings.YOUTUBE_COOKIE_FILE:
+        base['cookiefile'] = settings.YOUTUBE_COOKIE_FILE
     if mode == 'video':
         base.update({
             'format': 'bv*+ba/best',
