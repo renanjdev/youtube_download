@@ -6,7 +6,6 @@ from shutil import which
 from uuid import UUID
 
 from yt_dlp import YoutubeDL
-from yt_dlp.networking.impersonate import ImpersonateTarget
 
 from .config import get_settings
 from .crud import create_file, get_job, update_job_status
@@ -16,14 +15,6 @@ from .storage import upload_to_storage
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 settings = get_settings()
-YOUTUBE_HEADERS = {
-    'User-Agent': (
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/122.0.0.0 Safari/537.36'
-    ),
-    'Accept-Language': 'en-US,en;q=0.9',
-}
 
 
 class ProcessingError(RuntimeError):
@@ -49,15 +40,13 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
     base = {
         'outtmpl': os.path.join(output_dir, f'%(id)s.%(ext)s'),
         'format': 'bestaudio/best',
-        'http_headers': YOUTUBE_HEADERS,
         'extractor_args': {
             'youtube': {
-                'player_client': ['web_safari', 'web'],
                 'skip': ['hls'],
             }
         },
         'js_runtimes': build_js_runtimes(),
-        'impersonate': ImpersonateTarget('chrome'),
+        'check_formats': 'selected',
         'socket_timeout': 30,
         'retries': 3,
         'fragment_retries': 3,
