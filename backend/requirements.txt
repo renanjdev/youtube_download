@@ -3,7 +3,7 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 python-dotenv
-yt-dlp
+yt-dlp[default,curl-cffi]
 supabase
 pydantic
 pydantic-settings

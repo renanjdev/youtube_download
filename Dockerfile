@@ -1,8 +1,10 @@
 FROM python:3.11-slim
 
-# Instala o ffmpeg (Essencial para o yt-dlp fundir audio e video do Youtube)
+# Instala ffmpeg e deno para o yt-dlp-ejs resolver os desafios do YouTube.
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y --no-install-recommends curl ffmpeg unzip && \
+    curl -fsSL https://deno.land/install.sh | sh -s -- -q && \
+    ln -s /root/.deno/bin/deno /usr/local/bin/deno && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

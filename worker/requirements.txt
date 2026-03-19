@@ -4,4 +4,4 @@ sqlalchemy
 psycopg2-binary
 python-dotenv
 boto3
-yt-dlp
+yt-dlp[default,curl-cffi]

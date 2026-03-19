@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from shutil import which
 from uuid import UUID
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -13,10 +14,23 @@ from backend.app.crud import create_file, get_job, update_job_status
 from backend.app.database import SessionLocal
 from backend.app.storage import upload_to_storage
 from yt_dlp import YoutubeDL
+from yt_dlp.networking.impersonate import ImpersonateTarget
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 settings = get_settings()
+YOUTUBE_HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/122.0.0.0 Safari/537.36'
+    ),
+    'Accept-Language': 'en-US,en;q=0.9',
+}
+
+
+class ProcessingError(RuntimeError):
+    pass
 
 
 def sanitize_filename(name: str) -> str:
@@ -25,10 +39,30 @@ def sanitize_filename(name: str) -> str:
     return cleaned.strip('_') or 'file'
 
 
+def build_js_runtimes() -> dict:
+    runtimes = {}
+    if deno_path := which('deno'):
+        runtimes['deno'] = {'path': deno_path}
+    if node_path := which('node') or which('nodejs'):
+        runtimes['node'] = {'path': node_path}
+    return runtimes
+
+
 def build_options(job_url: str, output_dir: str, mode: str) -> dict:
     base = {
         'outtmpl': os.path.join(output_dir, f'%(id)s.%(ext)s'),
         'format': 'bestaudio/best',
+        'http_headers': YOUTUBE_HEADERS,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['web_safari', 'web'],
+            }
+        },
+        'js_runtimes': build_js_runtimes(),
+        'impersonate': ImpersonateTarget('chrome'),
+        'socket_timeout': 30,
+        'retries': 3,
+        'fragment_retries': 3,
     }
     if mode == 'video':
         base.update({
@@ -48,7 +82,7 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
         })
     base['restrictfilenames'] = True
     base['noplaylist'] = False
-    base['ignoreerrors'] = True
+    base['ignoreerrors'] = False
     return base
 
 
@@ -67,7 +101,11 @@ def process_job(job_id: str):
             ydl_opts = build_options(job.url, tmpdir, job.mode)
             with YoutubeDL(ydl_opts) as ydl:
                 logging.info('Iniciando download: %s', job.url)
-                ydl.download([job.url])
+                error_code = ydl.download([job.url])
+                if error_code:
+                    raise ProcessingError(
+                        f'yt-dlp returned non-zero exit status for job {job.id}: {error_code}'
+                    )
 
             candidates = sorted(Path(tmpdir).rglob('*'))
             uploaded = 0
@@ -83,6 +121,9 @@ def process_job(job_id: str):
                 create_file(session, job.id, file_url, job.mode)
                 uploaded += 1
                 logging.info('Arquivo enviado: %s (%s)', key, file_url)
+
+        if uploaded == 0:
+            raise ProcessingError(f'Nenhum arquivo foi gerado para o job {job.id}')
 
         update_job_status(session, job.id, 'done')
     except Exception as exc:
