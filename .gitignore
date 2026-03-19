@@ -1,0 +1,21 @@
+﻿# General
+.env.local
+.env.*.local
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+*.log
+*.db
+.DS_Store
+node_modules/
+npm-debug.log
+yarn-error.log
+/dist/
+/.parcel-cache/
+/.next/
+/.turbo/
+/frontend/node_modules/
+/backend/.venv/
+/workspace-logs

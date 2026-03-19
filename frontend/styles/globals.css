@@ -1,0 +1,17 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-midnight text-white min-h-screen;
+  background: radial-gradient(circle at top, rgba(0, 240, 255, 0.25), transparent 45%), #0a0f1c;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+main {
+  min-height: 100vh;
+}
