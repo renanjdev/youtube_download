@@ -53,6 +53,7 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
         'extractor_args': {
             'youtube': {
                 'player_client': ['web_safari', 'web'],
+                'skip': ['hls'],
             }
         },
         'js_runtimes': build_js_runtimes(),
@@ -63,12 +64,12 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
     }
     if mode == 'video':
         base.update({
-            'format': 'bv*+ba/best',
+            'format': '(bv*+ba/b)[protocol^=http][protocol!*=dash] / (bv*+ba/best)',
             'merge_output_format': 'mp4',
         })
     else:
         base.update({
-            'format': 'bestaudio/best',
+            'format': 'bestaudio[protocol^=http][protocol!*=dash] / (bestaudio/best)',
             'postprocessors': [
                 {
                     'key': 'FFmpegExtractAudio',
