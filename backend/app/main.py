@@ -15,8 +15,8 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables checked/created perfectly.")
-    except Exception as e:
-        logger.error(f"Failed to reach DB on startup (Render might still boot): {e}")
+    except Exception:
+        logger.exception("Failed to reach DB on startup (Render might still boot).")
     yield
 
 app = FastAPI(title="JEAN Tube API", version="0.1.0", lifespan=lifespan)

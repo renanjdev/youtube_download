@@ -8,6 +8,8 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const STORAGE_KEY = "media-user-id";
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type ApiJob = {
   id: string;
@@ -29,7 +31,15 @@ function createId() {
     return crypto.randomUUID();
   }
 
-  return `user-${Math.random().toString(36).slice(2, 10)}`;
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function isUuid(value: string) {
+  return UUID_PATTERN.test(value);
 }
 
 function getProgress(status: JobStatus) {
@@ -125,18 +135,27 @@ function mapApiJob(job: ApiJob): JobSummary {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers ?? {});
+  headers.set("X-User-Id", getUserId());
+
+  if (init?.body) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": getUserId(),
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.detail ?? "API request failed");
+    const rawBody = await response.text();
+
+    try {
+      const payload = JSON.parse(rawBody) as { detail?: string };
+      throw new Error(payload.detail ?? `API request failed with status ${response.status}`);
+    } catch {
+      throw new Error(rawBody || `API request failed with status ${response.status}`);
+    }
   }
 
   return response.json() as Promise<T>;
@@ -152,7 +171,8 @@ export async function listJobs(): Promise<JobsFeed> {
       jobs: jobs.map(mapApiJob),
     };
   } catch (error) {
-    throw new Error("Erro de conexão com o painel do servidor. Verifique se a API está rodando na porta 8000.");
+    const message = error instanceof Error ? error.message : "API request failed";
+    throw new Error(`Erro ao consultar a API: ${message}`);
   }
 }
 
@@ -168,8 +188,9 @@ export async function createJob(payload: JobPayload) {
       note: "Processamento iniciado no servidor.",
       job: mapApiJob(job),
     };
-  } catch (error: any) {
-    throw new Error("Falha ao comunicar com o servidor: " + error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "API request failed";
+    throw new Error(`Falha ao comunicar com o servidor: ${message}`);
   }
 }
 
@@ -179,7 +200,7 @@ export function getUserId() {
   }
 
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored) return stored;
+  if (stored && isUuid(stored)) return stored;
 
   const generated = createId();
   window.localStorage.setItem(STORAGE_KEY, generated);
