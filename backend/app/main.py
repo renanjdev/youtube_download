@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import logging
 from .database import engine
 from .models import Base
 from .routers.jobs import router as jobs_router
@@ -6,9 +8,18 @@ from .routers.files import router as files_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Media SaaS API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables checked/created perfectly.")
+    except Exception as e:
+        logger.error(f"Failed to reach DB on startup (Render might still boot): {e}")
+    yield
+
+app = FastAPI(title="Media SaaS API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
