@@ -157,7 +157,7 @@ export default function Home() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon/10 text-neon shadow-[0_0_15px_rgba(0,240,255,0.2)]">
             <BoltIcon />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">Neon Media</span>
+          <span className="text-xl font-bold tracking-tight text-white">JEAN Tube</span>
         </div>
         <ShortUserLabel userId={userId} />
       </header>

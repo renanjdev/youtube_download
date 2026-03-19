@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to reach DB on startup (Render might still boot): {e}")
     yield
 
-app = FastAPI(title="Media SaaS API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="JEAN Tube API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
