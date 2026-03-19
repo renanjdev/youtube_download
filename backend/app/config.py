@@ -4,6 +4,7 @@ from pydantic.v1 import BaseSettings, validator
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    REDIS_URL: str | None = None
     STORAGE_BUCKET: str = "downloads"
     SUPABASE_URL: str
     SUPABASE_KEY: str

@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from uuid import UUID
 
+from ..config import get_settings
 from ..crud import create_job as create_job_record, list_jobs, get_job as find_job
-from ..schemas import FileResponse, JobCreate, JobStatusResponse
 from ..dependencies import get_db, get_current_user, enforce_rate_limit
+from ..queue import enqueue_media_job
+from ..schemas import FileResponse, JobCreate, JobStatusResponse
 from ..worker import process_job
 from ..utils import validate_job_url
 
 router = APIRouter()
+settings = get_settings()
 
 
 def to_response(job) -> JobStatusResponse:
@@ -45,7 +48,11 @@ def create_job(
         job = create_job_record(db, user.id, job_url, job_payload.mode, job_payload.type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-    background_tasks.add_task(process_job, str(job.id))
+    job_id = str(job.id)
+    if settings.REDIS_URL:
+        enqueue_media_job(job_id)
+    else:
+        background_tasks.add_task(process_job, job_id)
     return to_response(job)
 
 
