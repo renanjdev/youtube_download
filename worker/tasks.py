@@ -56,12 +56,12 @@ def build_options(job_url: str, output_dir: str, mode: str) -> dict:
     }
     if mode == 'video':
         base.update({
-            'format': '(bv*+ba/b)[protocol^=http][protocol!*=dash] / (bv*+ba/best)',
+            'format': 'bv*+ba/best',
             'merge_output_format': 'mp4',
         })
     else:
         base.update({
-            'format': 'bestaudio[protocol^=http][protocol!*=dash] / (bestaudio/best)',
+            'format': 'bestaudio/best',
             'postprocessors': [
                 {
                     'key': 'FFmpegExtractAudio',
