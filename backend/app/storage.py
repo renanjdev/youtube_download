@@ -1,26 +1,28 @@
-﻿import boto3
-from botocore.exceptions import ClientError
-
+import os
+from supabase import create_client, Client
 from .config import get_settings
 
 settings = get_settings()
 
-_session = boto3.session.Session()
-_s3 = _session.client(
-    's3',
-    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    region_name=settings.AWS_REGION,
-)
-
+supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 def upload_to_storage(file_path: str, bucket_key: str) -> str:
     try:
-        _s3.upload_file(file_path, settings.STORAGE_BUCKET, bucket_key)
-        return _s3.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': settings.STORAGE_BUCKET, 'Key': bucket_key},
-            ExpiresIn=settings.FILE_EXPIRATION_SECONDS,
+        with open(file_path, 'rb') as f:
+            supabase.storage.from_(settings.STORAGE_BUCKET).upload(
+                path=bucket_key,
+                file=f,
+                file_options={"content-type": "application/octet-stream"}
+            )
+        
+        # Obter URL assinada
+        res = supabase.storage.from_(settings.STORAGE_BUCKET).create_signed_url(
+            bucket_key, 
+            settings.FILE_EXPIRATION_SECONDS
         )
-    except ClientError as error:
-        raise RuntimeError(f'Falha ao subir para storage: {error}')
+        
+        # O supabase-py as vezes retorna um dict com key signedURL, ou a propria string dependendo da versao
+        return res.get("signedURL") if isinstance(res, dict) else res
+
+    except Exception as error:
+        raise RuntimeError(f'Falha ao subir para o Supabase Storage: {error}')

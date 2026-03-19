@@ -1,14 +1,12 @@
-﻿from functools import lru_cache
+from functools import lru_cache
 from pathlib import Path
-from pydantic import BaseSettings, validator
+from pydantic.v1 import BaseSettings, validator
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    REDIS_URL: str = "redis://localhost:6379/0"
-    STORAGE_BUCKET: str
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_REGION: str = "us-east-1"
+    STORAGE_BUCKET: str = "downloads"
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
     JOBS_PER_HOUR: int = 5
     MAX_FILES_PER_JOB: int = 100
     FILE_EXPIRATION_SECONDS: int = 3600

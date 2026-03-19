@@ -1,9 +1,9 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 python-dotenv
-redis
-rq
-boto3
+yt-dlp
+supabase
 pydantic
+pydantic-settings

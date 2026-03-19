@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -6,12 +6,57 @@
   color-scheme: dark;
 }
 
-body {
-  @apply bg-midnight text-white min-h-screen;
-  background: radial-gradient(circle at top, rgba(0, 240, 255, 0.25), transparent 45%), #0a0f1c;
-  font-family: 'Inter', system-ui, sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-main {
-  min-height: 100vh;
+html,
+body,
+#__next {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: #f3fbff;
+  font-family: var(--font-sans), sans-serif;
+  background-color: #050812;
+  overflow-x: hidden;
+}
+
+/* Background animated glow */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(217, 70, 239, 0.06), transparent 40%);
+  animation: bg-pulse 12s ease-in-out infinite alternate;
+}
+
+@keyframes bg-pulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  outline: none;
+}
+
+::selection {
+  background: rgba(0, 240, 255, 0.3);
+  color: #ffffff;
 }

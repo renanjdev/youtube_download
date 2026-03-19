@@ -1,11 +1,11 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from uuid import UUID
 
 from ..crud import create_job as create_job_record, list_jobs, get_job as find_job
 from ..schemas import FileResponse, JobCreate, JobStatusResponse
 from ..dependencies import get_db, get_current_user, enforce_rate_limit
-from ..queue import job_queue
+from ..worker import process_job
 from ..utils import validate_job_url
 
 router = APIRouter()
@@ -26,7 +26,7 @@ def to_response(job) -> JobStatusResponse:
                 file_type=file.file_type,
                 created_at=file.created_at,
             )
-            for file in getattr(job, \"files\", [])
+            for file in getattr(job, "files", [])
         ],
     )
 
@@ -34,6 +34,7 @@ def to_response(job) -> JobStatusResponse:
 @router.post("/jobs", response_model=JobStatusResponse, status_code=status.HTTP_201_CREATED)
 def create_job(
     job_payload: JobCreate,
+    background_tasks: BackgroundTasks,
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -43,7 +44,7 @@ def create_job(
         job = create_job_record(db, user.id, job_payload.url, job_payload.mode, job_payload.type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-    job_queue.enqueue("worker.tasks.process_job", job_id=str(job.id))
+    background_tasks.add_task(process_job, str(job.id))
     return to_response(job)
 
 
