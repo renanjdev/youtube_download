@@ -39,9 +39,10 @@ def create_job(
     db: Session = Depends(get_db),
 ):
     enforce_rate_limit(user.id)
-    validate_job_url(str(job_payload.url))
+    job_url = str(job_payload.url)
+    validate_job_url(job_url)
     try:
-        job = create_job_record(db, user.id, job_payload.url, job_payload.mode, job_payload.type)
+        job = create_job_record(db, user.id, job_url, job_payload.mode, job_payload.type)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     background_tasks.add_task(process_job, str(job.id))
